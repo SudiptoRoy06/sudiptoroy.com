@@ -31,7 +31,7 @@ export default function Site() {
   const [theme, setTheme] = useState(() => {
     const savedTheme = window.localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark';
   });
   const toggleRef = useRef(null);
   const panelRef = useRef(null);
