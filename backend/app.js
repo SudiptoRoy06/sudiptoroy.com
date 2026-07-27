@@ -9,7 +9,21 @@ import { apiRouter } from './routes/index.js';
 
 export const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use((req, res, next) => {
+  const origin = req.get('Origin')?.replace(/\/+$/, '');
+  if (origin && environment.frontendOrigins.includes(origin)) {
+    res.set('Access-Control-Allow-Origin', origin);
+    res.set('Access-Control-Allow-Credentials', 'true');
+    res.vary('Origin');
+  }
+  if (req.method === 'OPTIONS') {
+    res.set('Access-Control-Allow-Methods', 'GET,HEAD,POST,PUT,PATCH,DELETE');
+    res.set('Access-Control-Allow-Headers', req.get('Access-Control-Request-Headers') || 'Content-Type');
+    return res.status(204).end();
+  }
+  return next();
+});
+app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
 app.use('/uploads', express.static(uploadDir, { dotfiles: 'deny' }));

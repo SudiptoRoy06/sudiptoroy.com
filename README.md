@@ -34,7 +34,9 @@ cp .env.example .env
 npm run dev
 ```
 
-Vite runs at `http://localhost:5173`. During development it proxies `/api` and `/uploads` to `VITE_BACKEND_ORIGIN`, which defaults to `http://localhost:3001`. `VITE_BACKEND_ORIGIN` is only a development proxy target; never put credentials or other secrets in any `VITE_` variable.
+Vite runs at `http://localhost:5173`. Browser API URLs use `VITE_BACKEND_ORIGIN`, which defaults to `http://localhost:3001` in `.env.example`; the development server also proxies `/api` and `/uploads` to it. Set this variable in the frontend production build environment (for example, `https://sudiptoroy-com.onrender.com`). Never put credentials or other secrets in any `VITE_` variable.
+
+When the frontend and API use different origins, set the backend `FRONTEND_ORIGINS` to the comma-separated public frontend origins. The API uses this allowlist for credentialed CORS requests.
 
 ## Backend setup
 

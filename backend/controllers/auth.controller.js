@@ -20,7 +20,7 @@ export async function login(req, res) {
   return res
     .cookie(environment.session.cookieName, token, {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: environment.isProduction ? 'none' : 'lax',
       secure: environment.isProduction,
       maxAge: environment.session.ttlMs,
       path: '/'
@@ -30,6 +30,10 @@ export async function login(req, res) {
 
 export async function logout(req, res) {
   await deleteSession(req.sessionId);
-  res.clearCookie(environment.session.cookieName, { path: '/' });
+  res.clearCookie(environment.session.cookieName, {
+    path: '/',
+    sameSite: environment.isProduction ? 'none' : 'lax',
+    secure: environment.isProduction
+  });
   return res.status(204).end();
 }

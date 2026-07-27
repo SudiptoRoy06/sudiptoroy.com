@@ -1,6 +1,7 @@
 import {useEffect,useRef,useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import Logo from '../components/Logo';
+import {apiUrl} from '../api';
 import {useAuth} from './auth';
 
 const groups=[
@@ -99,7 +100,7 @@ function isErrorNotice(message){return /error|unable|could not|failed|required|e
 
 async function apiFetch(url,options={}){
   let response;
-  try{response=await fetch(url,{...options,credentials:'include'})}
+  try{response=await fetch(apiUrl(url),{...options,credentials:'include'})}
   catch{throw new Error('Could not reach the server. Please try again.')}
   const body=response.status===204?null:await response.json().catch(()=>null);
   if(!response.ok)throw new Error(body?.error||(response.status===401?'Authentication required. Please sign in again.':'Something went wrong. Please try again.'));

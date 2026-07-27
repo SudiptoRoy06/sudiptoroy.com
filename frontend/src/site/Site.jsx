@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import Logo from '../components/Logo';
+import {apiUrl, assetUrl} from '../api';
 
 const fallback = {
   profile: {
@@ -42,7 +43,7 @@ export default function Site() {
     window.localStorage.setItem('theme', theme);
   }, [theme]);
   useEffect(() => {
-    fetch('/api/content').then((r) => r.ok ? r.json() : Promise.reject()).then(setData).catch(() => setData(fallback));
+    fetch(apiUrl('/api/content')).then((r) => r.ok ? r.json() : Promise.reject()).then(setData).catch(() => setData(fallback));
   }, []);
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -83,6 +84,8 @@ export default function Site() {
 
   if (!data) return <div className="loading" role="status"><Logo/><span>Loading portfolio…</span></div>;
   const profile = {...fallback.profile, ...data.profile};
+  profile.portrait = assetUrl(profile.portrait);
+  profile.cv = assetUrl(profile.cv);
   const closeMenu = () => setMenu(false);
 
   return <>
