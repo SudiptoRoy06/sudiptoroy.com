@@ -7,7 +7,10 @@ const projectSchema = new mongoose.Schema({
   url: { type: String, default: '' },
   repositoryUrl: { type: String, default: '' },
   imageUrl: { type: String, default: '' },
+  imageUrls: { type: [String], default: [] },
+  logoUrl: { type: String, default: '' },
   technologies: { type: [String], default: [] },
+  technologyIcons: { type: [String], default: [] },
   published: { type: Boolean, default: false },
   sortOrder: { type: Number, required: true, default: 0 }
 }, schemaOptions);

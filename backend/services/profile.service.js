@@ -8,6 +8,10 @@ export const updateProfile = (value) => Profile.findOneAndUpdate(
       headline: sanitizeHtml(value.headline, { allowedTags: [] }),
       biography: sanitizeHtml(value.bio, { allowedTags: [] }),
       email: value.email,
+      phone: sanitizeHtml(value.phone, { allowedTags: [] }),
+      linkedinUrl: value.linkedinUrl,
+      githubUrl: value.githubUrl,
+      wordpressUrl: value.wordpressUrl,
       availability: value.available
     }
   },

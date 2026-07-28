@@ -3,10 +3,19 @@ import { z } from 'zod';
 import { backendDir } from '../config/paths.js';
 import { findProfileCv, updateProfile } from '../services/profile.service.js';
 
+const optionalHttpUrl = z.union([
+  z.literal(''),
+  z.string().url().max(500).refine(value => /^https?:\/\//i.test(value))
+]).default('');
+
 const profileInput = z.object({
   headline: z.string().min(3).max(180),
   bio: z.string().min(10).max(5000),
   email: z.union([z.literal(''), z.string().email()]),
+  phone: z.union([z.literal(''), z.string().trim().min(7).max(30).regex(/^\+?[\d\s().-]+$/)]).default(''),
+  linkedinUrl: optionalHttpUrl,
+  githubUrl: optionalHttpUrl,
+  wordpressUrl: optionalHttpUrl,
   available: z.boolean()
 });
 

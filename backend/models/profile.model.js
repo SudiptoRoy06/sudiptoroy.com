@@ -6,6 +6,10 @@ const profileSchema = new mongoose.Schema({
   headline: { type: String, required: true, trim: true },
   biography: { type: String, required: true, trim: true },
   email: { type: String, default: '', trim: true, lowercase: true },
+  phone: { type: String, default: '', trim: true },
+  linkedinUrl: { type: String, default: '', trim: true },
+  githubUrl: { type: String, default: '', trim: true },
+  wordpressUrl: { type: String, default: '', trim: true },
   availability: { type: Boolean, default: false },
   portrait: { type: String, default: '/images/portrait-placeholder.svg' },
   cv: { type: String, default: null }

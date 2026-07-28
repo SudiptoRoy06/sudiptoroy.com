@@ -12,7 +12,8 @@
   "dependencies": {
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest"
+    "react-router-dom": "latest",
+    "simple-icons": "^16.27.1"
   },
   "devDependencies": {
     "@eslint/js": "latest",
@@ -23,10 +24,10 @@
     "eslint": "latest",
     "eslint-plugin-react-hooks": "latest",
     "eslint-plugin-react-refresh": "latest",
+    "globals": "latest",
     "jsdom": "latest",
     "vite": "latest",
-    "vitest": "latest",
-    "globals": "latest"
+    "vitest": "latest"
   },
   "engines": {
     "node": "^20.19.0 || ^22.13.0 || >=24"
