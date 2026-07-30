@@ -2,8 +2,8 @@ import { saveContentUpload, saveProfileUpload } from '../services/upload.service
 
 export async function uploadProfileAsset(req, res) {
   const url = ['logo', 'image'].includes(req.params.kind)
-    ? await saveContentUpload(req.params.kind, req.file)
+    ? await saveContentUpload(req.params.kind, req.file, req.body?.folder)
     : await saveProfileUpload(req.params.kind, req.file);
-  if (!url) return res.status(400).json({ error: 'Unsupported file type' });
+  if (!url) return res.status(400).json({ error: 'Unsupported file type or upload folder' });
   return res.json({ url });
 }

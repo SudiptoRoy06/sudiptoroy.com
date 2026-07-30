@@ -1,7 +1,6 @@
-import path from 'node:path';
 import { z } from 'zod';
-import { backendDir } from '../config/paths.js';
 import { findProfileCv, updateProfile } from '../services/profile.service.js';
+import { getObject } from '../services/r2.service.js';
 
 const optionalHttpUrl = z.union([
   z.literal(''),
@@ -30,9 +29,18 @@ export async function saveProfile(req, res) {
 export async function downloadCv(_req, res) {
   const profile = await findProfileCv();
   if (!profile?.cv) return res.status(404).json({ error: 'CV not published' });
-
-  return res.download(
-    path.join(backendDir, profile.cv.replace(/^\//, '')),
-    'Sudipto-Roy-CV.pdf'
-  );
+  const key = profile.cv.match(/^\/uploads\/((?:cv\/)?[a-zA-Z0-9._-]+)$/)?.[1];
+  if (!key) return res.status(404).json({ error: 'CV not published' });
+  try {
+    const object = await getObject(key);
+    res.attachment('Sudipto-Roy-CV.pdf');
+    res.type(object.ContentType || 'application/pdf');
+    if (object.ContentLength !== undefined) res.set('Content-Length', String(object.ContentLength));
+    return object.Body.pipe(res);
+  } catch (error) {
+    if (error?.name === 'NoSuchKey' || error?.$metadata?.httpStatusCode === 404) {
+      return res.status(404).json({ error: 'CV not found' });
+    }
+    throw error;
+  }
 }

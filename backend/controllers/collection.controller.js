@@ -3,7 +3,9 @@ import { CustomSection, Experience, Project, Skill } from '../models/index.js';
 import { getContent } from '../services/content.service.js';
 
 const optionalUrl = z.union([z.literal(''), z.string().url()]);
-const optionalUpload = z.union([z.literal(''), z.string().regex(/^\/uploads\/[a-zA-Z0-9._-]+$/)]);
+const optionalUpload = z.union([z.literal(''), z.string().regex(/^\/uploads\/(?:[a-z0-9-]+\/)?[a-zA-Z0-9._-]+$/)]);
+const sectionSlug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const reservedSlugs = new Set(['top', 'about', 'skills', 'experience', 'projects', 'contact', 'content', 'avatar', 'cv']);
 const schemas = {
   skills: z.array(z.object({
     name: z.string().trim().min(1).max(100),
@@ -29,6 +31,7 @@ const schemas = {
   })).max(100),
   customSections: z.array(z.object({
     title: z.string().trim().min(1).max(100),
+    slug: sectionSlug.optional(),
     intro: z.string().trim().max(1000).default(''),
     presentation: z.enum(['section', 'page']).default('section'),
     itemPresentation: z.enum(['modal', 'page']).default('modal'),
@@ -51,9 +54,10 @@ const toSlug = value => value.toLowerCase().trim()
   .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
 
 const withUniqueSlugs = items => {
-  const used = new Set(['top', 'about', 'skills', 'experience', 'projects', 'contact', 'content']);
+  const used = new Set(reservedSlugs);
   return items.map((item, sortOrder) => {
-    const base = toSlug(item.title);
+    const requested = item.slug;
+    const base = requested && !reservedSlugs.has(requested) ? requested : toSlug(item.title);
     let slug = base;
     let suffix = 2;
     while (used.has(slug)) slug = `${base}-${suffix++}`;

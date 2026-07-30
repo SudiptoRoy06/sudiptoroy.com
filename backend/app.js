@@ -3,9 +3,11 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 import helmet from 'helmet';
 import { environment } from './config/environment.js';
-import { frontendDist, uploadDir } from './config/paths.js';
+import { frontendDist } from './config/paths.js';
+import { showUploadedAsset } from './controllers/asset.controller.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 import { apiRouter } from './routes/index.js';
+import { asyncHandler } from './utils/async-handler.js';
 
 export const app = express();
 
@@ -26,7 +28,7 @@ app.use((req, res, next) => {
 app.use(helmet({ contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
-app.use('/uploads', express.static(uploadDir, { dotfiles: 'deny' }));
+app.get(/^\/uploads\/(.+)$/, asyncHandler(showUploadedAsset));
 app.use('/api', apiRouter);
 
 if (environment.isProduction) {

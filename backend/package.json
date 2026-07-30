@@ -7,19 +7,21 @@
     "dev": "node --watch index.js",
     "start": "node index.js",
     "seed": "node seed.js",
+    "migrate:uploads:r2": "node scripts/migrate-uploads-to-r2.js",
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1097.0",
     "bcryptjs": "3.0.3",
     "cookie-parser": "1.4.7",
     "dotenv": "17.4.2",
     "express": "5.2.1",
     "express-rate-limit": "8.6.0",
     "helmet": "8.3.0",
+    "mongoose": "8.19.1",
     "multer": "2.2.0",
     "sanitize-html": "2.17.6",
-    "zod": "4.4.3",
-    "mongoose": "8.19.1"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "supertest": "7.2.2",

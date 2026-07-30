@@ -62,6 +62,12 @@ Express listens at `http://localhost:3001` by default. Run the frontend and back
 | `ADMIN_PASSWORD` | For `npm run seed` | Administrator password of at least 12 characters; only its bcrypt hash is stored. |
 | `SESSION_TTL_MINUTES` | No | Session and cookie lifetime; defaults to 60 minutes. |
 | `NODE_ENV` | No | Set to `production` to enable secure cookies and compiled-frontend serving. |
+| `R2_ACCOUNT_ID` | Yes for uploads | Cloudflare account identifier. Retained server-side for R2 administration and diagnostics. |
+| `R2_API_TOKEN` | Yes for R2 administration | Cloudflare API token. The S3 data path uses the access key pair, so never expose this token to the frontend. |
+| `R2_ACCESS_KEY_ID` | Yes for uploads | R2 S3 API access key ID. |
+| `R2_SECRET_ACCESS_KEY` | Yes for uploads | R2 S3 API secret access key. |
+| `R2_BUCKET_NAME` | Yes for uploads | Name of the R2 bucket that stores images and documents. |
+| `R2_ENDPOINT` | Yes for uploads | Jurisdiction-specific R2 S3 endpoint supplied by Cloudflare. |
 
 ## MongoDB Atlas setup and administrator provisioning
 
@@ -78,9 +84,20 @@ cd backend
 npm run seed
 ```
 
-The seed is idempotent: it updates the normalized administrator account and inserts draft portfolio collections only when those collections are empty. It does not overwrite existing portfolio content. Remove the plaintext administrator password from the runtime environment after provisioning. Keep `backend/uploads/` on persistent storage and back it up in coordination with Atlas backups.
+The seed is idempotent: it updates the normalized administrator account and inserts draft portfolio collections only when those collections are empty. It does not overwrite existing portfolio content. Remove the plaintext administrator password from the runtime environment after provisioning.
 
-Uploaded portraits are stored under `backend/uploads/` and exposed at `/uploads/...`; CV downloads are resolved from the same directory. Portraits accept JPEG, PNG, or WebP, CVs accept PDF, and uploads are capped at 8 MiB.
+Uploaded portraits, content images, logos, and CV documents are stored in Cloudflare R2. The backend exposes private bucket objects through `/uploads/...`, which keeps credentials and the bucket private. Objects are organized under `avatar/`, `cv/`, `projects/`, or the stable custom-section slug (for example `blogs/`, `events/`, or `products/`). Portraits accept JPEG, PNG, or WebP, CVs accept PDF, and uploads are capped at 8 MiB.
+
+Create a private R2 bucket, create an R2 S3 API credential with object read/write access limited to that bucket, and copy `backend/.env.example` to `backend/.env`. Set all `R2_*` variables there and in the production host's secret/environment settings. `R2_ENDPOINT` should be the jurisdiction-specific S3 endpoint itself (for example, `https://<account-id>.<jurisdiction>.r2.cloudflarestorage.com`), not a public development URL and not a bucket URL.
+
+After configuring `backend/.env`, migrate the existing local images and PDF once:
+
+```bash
+cd backend
+npm run migrate:uploads:r2
+```
+
+The command uses MongoDB references to classify each legacy asset, copies it from `backend/uploads/` (or the R2 bucket root as a fallback) into its designated folder, and rewrites the corresponding database URL only after a successful copy. It is safe to rerun, reports missing assets, and preserves all legacy local and R2 sources for rollback. Verify the deployed assets before archiving or removing the old directory.
 
 ## Tests, linting, and production
 
@@ -112,6 +129,6 @@ npm ci
 NODE_ENV=production npm start
 ```
 
-The frontend build is written to `frontend/dist/`. In production mode, the backend serves that directory and uses its `index.html` as the SPA fallback; it continues to serve API routes under `/api` and runtime assets under `/uploads`. The `frontend/dist/` and `backend/uploads/` locations therefore need to be present together in a single-server deployment. Terminate TLS in front of Express so production cookies are secure.
+The frontend build is written to `frontend/dist/`. In production mode, the backend serves that directory and uses its `index.html` as the SPA fallback; it continues to serve API routes under `/api` and proxies runtime assets under `/uploads` from R2. No persistent backend filesystem is required. Terminate TLS in front of Express so production cookies are secure.
 
 For separate static hosting, deploy `frontend/dist/`, rewrite browser routes such as `/admin/login` and `/admin/*` to `index.html`, and route `/api/*` and `/uploads/*` to the backend origin.
