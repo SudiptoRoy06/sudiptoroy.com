@@ -1,6 +1,10 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import {createRoot, hydrateRoot} from 'react-dom/client';
 import {BrowserRouter} from 'react-router-dom';
 import App from './App';
 import './styles.css';
-ReactDOM.createRoot(document.getElementById('root')).render(<React.StrictMode><BrowserRouter><App/></BrowserRouter></React.StrictMode>);
+const root = document.getElementById('root');
+const initialContent = window.__INITIAL_CONTENT__ || null;
+const application = <React.StrictMode><BrowserRouter><App initialContent={initialContent}/></BrowserRouter></React.StrictMode>;
+if (root.hasAttribute('data-prerendered')) hydrateRoot(root, application);
+else createRoot(root).render(application);

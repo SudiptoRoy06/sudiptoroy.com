@@ -1,5 +1,11 @@
 import { CustomSection, Experience, Profile, Project, Skill } from '../models/index.js';
 
+const serializeMedia = value => {
+  if (!value || typeof value !== 'string') return value || '';
+  const match=value.match(/^(\/uploads\/.*)-original\.[^.]+$/);
+  return match ? {url:value,width:1200,height:1200,srcSet:[480,800,1200].map(width=>({width,url:`${match[1]}-${width}.webp`}))} : value;
+};
+
 const serializeProfile = (profile) => profile && ({
   headline: profile.headline,
   bio: profile.biography,
@@ -9,7 +15,7 @@ const serializeProfile = (profile) => profile && ({
   githubUrl: profile.githubUrl,
   wordpressUrl: profile.wordpressUrl,
   available: profile.availability,
-  portrait: profile.portrait,
+  portrait: serializeMedia(profile.portrait),
   cv: profile.cv
 });
 
@@ -29,9 +35,9 @@ const serializeProject = (item) => ({
   technologyIcons: item.technologyIcons,
   url: item.url,
   repositoryUrl: item.repositoryUrl,
-  image: item.imageUrls?.[0] || item.imageUrl,
-  images: item.imageUrls?.length ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : []),
-  logo: item.logoUrl,
+  image: serializeMedia(item.imageUrls?.[0] || item.imageUrl),
+  images: (item.imageUrls?.length ? item.imageUrls : (item.imageUrl ? [item.imageUrl] : [])).map(serializeMedia),
+  logo: serializeMedia(item.logoUrl),
   published: item.published
 });
 
@@ -57,7 +63,7 @@ const serializeBlocks = blocks => {
     let suffix = 2;
     while (used.has(slug)) slug = `${base}-${suffix++}`;
     used.add(slug);
-    return {...block, slug};
+    return {...block,logo:serializeMedia(block.logo),image:serializeMedia(block.image),images:(block.images||[]).map(serializeMedia),slug};
   });
 };
 

@@ -2,9 +2,8 @@ import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Link, useParams} from 'react-router-dom';
 import Logo from '../components/Logo';
-import {apiUrl, assetUrl} from '../api';
+import {apiUrl, assetSrcSet, assetUrl} from '../api';
 import {SkillIcon} from '../skill-icons';
-import {siGithub,siWordpress} from 'simple-icons';
 
 const fallback = {
   profile: {
@@ -25,16 +24,26 @@ const fallback = {
   projects: [{id: 1, title: 'Featured work coming soon', summary: 'Verified case studies will appear here after publication.', stack: 'React · Node.js', url: ''}],
   customSections: [],
 };
-const imageSet = (src) => src ? `${src}?w=480 480w, ${src}?w=800 800w, ${src}?w=1200 1200w` : undefined;
+const imageSet = (src) => assetSrcSet(src);
 function Reveal({children, className = ''}) {
   return <div className={`reveal ${className}`}>{children}</div>;
 }
 function TechAccent({variant}) {
   return <div className={`section-motion ${variant}`} aria-hidden="true"><i/><i/><i/><span/></div>;
 }
+function SkillsShowcase({skills}) {
+  const trackRef=useRef(null);
+  const scroll=direction=>trackRef.current?.scrollBy({left:direction*trackRef.current.clientWidth*.8,behavior:'smooth'});
+  return <div className="skill-slider-wrap">
+    <div className="slider-controls skill-controls" aria-label="Skills slider controls">
+      <button type="button" onClick={()=>scroll(-1)} aria-label="Previous skills">&larr;</button>
+      <button type="button" onClick={()=>scroll(1)} aria-label="Next skills">&rarr;</button>
+    </div>
+    <div className="skill-grid" ref={trackRef}>{skills.length ? skills.map((skill) => <article key={skill.id || skill}>{skill.icon&&<SkillIcon id={skill.icon} className="skill-icon"/>}<h3>{skill.name || skill}</h3><p>{skill.description || 'Applied thoughtfully to ship maintainable, high-quality work.'}</p></article>) : <p className="empty">Skills will be published soon.</p>}</div>
+  </div>;
+}
 function ContactIcon({type}) {
-  const brand={github:siGithub,wordpress:siWordpress}[type];
-  if(brand)return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d={brand.path}/></svg>;
+  if(type==='github'||type==='wordpress')return <SkillIcon id={type}/>;
   if(type==='linkedin')return <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.7 3A1.7 1.7 0 1 1 4.7 6.4 1.7 1.7 0 0 1 4.7 3ZM3.2 8h3v12.8h-3V8Zm5.2 0h2.9v1.8h.1c.8-1.4 2.2-2.2 3.9-2.2 4.1 0 4.9 2.7 4.9 6.3v6.9h-3v-6.1c0-1.5 0-4.3-2.6-4.3s-3 2-3 4.1v6.3h-3V8Z"/></svg>;
   if(type==='email')return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5h18v12H3zM3.5 7l8.5 7 8.5-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>;
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.1 3.5 10 7.3 8.2 9.5c1.3 2.7 3.5 4.9 6.2 6.2l2.3-1.8 3.8 2.9-.8 3c-.2.7-.8 1.2-1.6 1.2C10 20.6 3.4 14 3 5.9c0-.7.5-1.4 1.2-1.6l2.9-.8Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>;
@@ -82,19 +91,19 @@ function CustomPost({section,block}){
   </article>;
 }
 
-export function CustomSectionPage(){
+const initialTheme = () => 'dark';
+
+export function CustomSectionPage({initialContent = null}){
   const {slug,itemSlug}=useParams();
-  const [state,setState]=useState({loading:true,data:null});
-  const [theme,setTheme]=useState(()=>{
-    const savedTheme=window.localStorage.getItem('theme');
-    return savedTheme==='light'||savedTheme==='dark'?savedTheme:'dark';
-  });
+  const [state,setState]=useState({loading:!initialContent,data:initialContent});
+  const [theme,setTheme]=useState(initialTheme);
   useEffect(()=>{
     document.documentElement.dataset.theme=theme;
     document.documentElement.style.colorScheme=theme;
     window.localStorage.setItem('theme',theme);
   },[theme]);
   useEffect(()=>{
+    if(initialContent)return;
     let active=true;
     const controller=new AbortController();
     fetch(apiUrl('/api/content'),{signal:controller.signal})
@@ -102,7 +111,7 @@ export function CustomSectionPage(){
       .then(data=>active&&setState({loading:false,data}))
       .catch(error=>error?.name!=='AbortError'&&active&&setState({loading:false,data:null}));
     return()=>{active=false;controller.abort()};
-  },[]);
+  },[initialContent]);
   if(state.loading)return <div className="loading" role="status"><Logo/><span>Loading content…</span></div>;
   const section=state.data?.customSections?.find(item=>item.slug===slug);
   if(!section)return <main className="not-found"><p className="eyebrow">404 · Lost signal</p><h1>This page hasn’t shipped.</h1><Link className="button" to="/">Return home</Link></main>;
@@ -133,15 +142,11 @@ export function CustomSectionShowcase({section}) {
   </>;
 }
 
-export default function Site() {
-  const [data, setData] = useState(null);
+export default function Site({initialContent = null}) {
+  const [data, setData] = useState(initialContent);
   const [menu, setMenu] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [theme, setTheme] = useState(() => {
-    const savedTheme = window.localStorage.getItem('theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-    return 'dark';
-  });
+  const [theme, setTheme] = useState(initialTheme);
   const toggleRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -151,13 +156,14 @@ export default function Site() {
     window.localStorage.setItem('theme', theme);
   }, [theme]);
   useEffect(() => {
+    if (initialContent) return;
     const controller = new AbortController();
     fetch(apiUrl('/api/content'), {signal: controller.signal})
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then(setData)
       .catch((error) => error?.name !== 'AbortError' && setData(fallback));
     return () => controller.abort();
-  }, []);
+  }, [initialContent]);
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     handleScroll();
@@ -197,6 +203,7 @@ export default function Site() {
 
   if (!data) return <div className="loading" role="status"><Logo/><span>Loading portfolio…</span></div>;
   const profile = {...fallback.profile, ...data.profile};
+  const portraitMedia = profile.portrait;
   profile.portrait = assetUrl(profile.portrait);
   profile.cv = assetUrl(profile.cv);
   const closeMenu = () => setMenu(false);
@@ -254,10 +261,10 @@ export default function Site() {
           <div className="actions"><a className="button" href="#projects">Explore my work</a><a className="text-link" href="#contact">Start a conversation <span aria-hidden="true">→</span></a></div>
           <div className="metrics" aria-label="Working principles"><span><b>Product-minded</b>Engineering</span><span><b>Accessible</b>By default</span><span><b>Reliable</b>From UI to API</span></div>
         </div>
-        <div className="portrait-wrap"><picture><source srcSet={imageSet(profile.portrait)} sizes="(max-width: 480px) 82vw, (max-width: 900px) 360px, 32vw"/><img src={profile.portrait} width="720" height="720" fetchPriority="high" alt="Sudipto Roy"/></picture><span className="code-badge badge-one" aria-hidden="true">&lt;/&gt;</span><span className="code-badge badge-two" aria-hidden="true">01</span></div>
+        <div className="portrait-wrap"><picture><source type="image/webp" srcSet={imageSet(portraitMedia)} sizes="(max-width: 480px) 82vw, (max-width: 900px) 360px, 32vw"/><img src={profile.portrait} width="720" height="720" fetchPriority="high" decoding="async" alt="Sudipto Roy"/></picture><span className="code-badge badge-one" aria-hidden="true">&lt;/&gt;</span><span className="code-badge badge-two" aria-hidden="true">01</span></div>
       </section>
       <Reveal><section id="about" className="split motion-section"><TechAccent variant="flow"/><p className="section-label">ABOUT</p><div><h2>I build software that feels simple, not simplistic.</h2><p className="body-large">{profile.bio}</p></div></section></Reveal>
-      <Reveal><section id="skills" className="motion-section"><TechAccent variant="matrix"/><p className="section-label">SKILLS</p><h2>Tools are temporary.<br/>Good judgment compounds.</h2><div className="skill-grid">{(data.skills || fallback.skills).length ? (data.skills || fallback.skills).map((skill) => <article key={skill.id || skill}>{skill.icon&&<SkillIcon id={skill.icon} className="skill-icon"/>}<h3>{skill.name || skill}</h3><p>{skill.description || 'Applied thoughtfully to ship maintainable, high-quality work.'}</p></article>) : <p className="empty">Skills will be published soon.</p>}</div></section></Reveal>
+      <Reveal><section id="skills" className="motion-section"><TechAccent variant="matrix"/><p className="section-label">SKILLS</p><h2>Tools are temporary.<br/>Good judgment compounds.</h2><SkillsShowcase skills={data.skills || fallback.skills}/></section></Reveal>
       <Reveal><section id="experience" className="experience-section motion-section"><TechAccent variant="signal"/><p className="section-label">EXPERIENCE</p><div><h2>Where I’ve made an impact.</h2><div className="roadmap">{(data.experience || fallback.experience).map((item) => <article className="milestone" key={item.id}><span className="milestone-dot" aria-hidden="true"/><p className="milestone-period">{item.period}</p><div className="milestone-card"><h3>{item.role}</h3><b>{item.company}</b><p>{item.summary}</p></div></article>)}</div></div></section></Reveal>
       <Reveal><section id="projects" className="motion-section"><TechAccent variant="nodes"/><p className="section-label">SELECTED WORK</p><h2>Built to solve. Designed to last.</h2><ProjectShowcase projects={(data.projects || fallback.projects)}/></section></Reveal>
       {(data.customSections || []).filter(section=>(section.presentation||'section')==='section').map(section => <Reveal key={section.id || section.slug}><section id={section.slug} className="custom-section motion-section"><TechAccent variant="matrix"/><p className="section-label">{section.title.toUpperCase()}</p><h2>{section.title}</h2>{section.intro && <p className="body-large">{section.intro}</p>}<CustomSectionShowcase section={section}/></section></Reveal>)}

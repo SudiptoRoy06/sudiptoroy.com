@@ -3,7 +3,8 @@ import { Profile } from '../models/index.js';
 
 const r2 = vi.hoisted(() => ({
   deleteObject: vi.fn(),
-  putObject: vi.fn()
+  putObject: vi.fn(),
+  putBuffer: vi.fn()
 }));
 
 vi.mock('./r2.service.js', () => r2);
@@ -11,9 +12,9 @@ vi.mock('./r2.service.js', () => r2);
 const { saveContentUpload, saveProfileUpload, validContentFolder } = await import('./upload.service.js');
 
 const image = {
-  buffer: Buffer.from('image'),
-  mimetype: 'image/webp',
-  originalname: 'example.WEBP'
+  buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+  mimetype: 'image/png',
+  originalname: 'example.PNG'
 };
 
 describe('R2 upload folders', () => {
@@ -33,11 +34,11 @@ describe('R2 upload folders', () => {
     const projectUrl = await saveContentUpload('image', image, 'projects');
     const blogUrl = await saveContentUpload('logo', image, 'blogs');
 
-    expect(projectUrl).toMatch(/^\/uploads\/projects\/[a-f0-9-]+\.webp$/);
-    expect(blogUrl).toMatch(/^\/uploads\/blogs\/[a-f0-9-]+\.webp$/);
+    expect(projectUrl).toMatch(/^\/uploads\/projects\/[a-f0-9-]+-original\.png$/);
+    expect(blogUrl).toMatch(/^\/uploads\/blogs\/[a-f0-9-]+-original\.png$/);
     expect(r2.putObject.mock.calls.map(([key]) => key)).toEqual([
-      expect.stringMatching(/^projects\/[a-f0-9-]+\.webp$/),
-      expect.stringMatching(/^blogs\/[a-f0-9-]+\.webp$/)
+      expect.stringMatching(/^projects\/[a-f0-9-]+-original\.png$/),
+      expect.stringMatching(/^blogs\/[a-f0-9-]+-original\.png$/)
     ]);
   });
 
@@ -53,7 +54,7 @@ describe('R2 upload folders', () => {
       originalname: 'resume.pdf'
     });
 
-    expect(portraitUrl).toMatch(/^\/uploads\/avatar\/[a-f0-9-]+\.webp$/);
+    expect(portraitUrl).toMatch(/^\/uploads\/avatar\/[a-f0-9-]+-original\.png$/);
     expect(cvUrl).toMatch(/^\/uploads\/cv\/[a-f0-9-]+\.pdf$/);
   });
 

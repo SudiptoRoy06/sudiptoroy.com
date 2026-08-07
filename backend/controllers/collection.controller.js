@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { CustomSection, Experience, Project, Skill } from '../models/index.js';
 import { getContent } from '../services/content.service.js';
+import { triggerFrontendDeployment } from '../services/deployment.service.js';
 
 const optionalUrl = z.union([z.literal(''), z.string().url()]);
 const optionalUpload = z.union([z.literal(''), z.string().regex(/^\/uploads\/(?:[a-z0-9-]+\/)?[a-zA-Z0-9._-]+$/)]);
@@ -94,5 +95,6 @@ export async function saveCollection(req, res) {
   await model.deleteMany({});
   if (parsed.data.length) await model.insertMany(documents(parsed.data));
   const content = await getContent(true);
-  return res.json({ ok: true, items: content[section] });
+  const deployment = await triggerFrontendDeployment();
+  return res.json({ ok: true, items: content[section], deployment });
 }

@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import mongoose from 'mongoose';
+import sharp from 'sharp';
 import { Profile } from '../models/index.js';
-import { deleteObject, putObject } from './r2.service.js';
+import { deleteObject, putBuffer, putObject } from './r2.service.js';
 
 export const uploadConfig = {
   portrait: { field: 'portrait', folder: 'avatar', mimeTypes: ['image/jpeg', 'image/png', 'image/webp'] },
@@ -21,12 +22,26 @@ export function validContentFolder(folder) {
 
 export const removeUploadedFile = async (url) => {
   const key = objectKeyFromUrl(url);
-  if (key) await deleteObject(key);
+  if (key) {
+    await deleteObject(key);
+    const match=key.match(/^(.*)-original\.[^.]+$/);
+    if(match)await Promise.all([480,800,1200].map(width=>deleteObject(`${match[1]}-${width}.webp`).catch(()=>{})));
+  }
 };
 
 async function uploadFile(file, folder) {
-  const key = `${folder}/${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
+  if (!file.mimetype.startsWith('image/')) {
+    const key = `${folder}/${crypto.randomUUID()}${path.extname(file.originalname).toLowerCase()}`;
+    await putObject(key, file);
+    return `/uploads/${key}`;
+  }
+  const base = `${folder}/${crypto.randomUUID()}`;
+  const key = `${base}-original${path.extname(file.originalname).toLowerCase()}`;
   await putObject(key, file);
+  await Promise.all([480,800,1200].map(async width => {
+    const buffer=await sharp(file.buffer).rotate().resize({width,withoutEnlargement:true}).webp({quality:82}).toBuffer();
+    await putBuffer(`${base}-${width}.webp`,buffer,'image/webp');
+  }));
   return `/uploads/${key}`;
 }
 

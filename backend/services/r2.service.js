@@ -46,6 +46,13 @@ export async function putObject(key, file) {
   }));
 }
 
+export async function putBuffer(key, buffer, contentType) {
+  await r2Client().send(new PutObjectCommand({
+    Bucket: bucketName(), Key: key, Body: buffer, ContentType: contentType,
+    CacheControl: 'public, max-age=31536000, immutable'
+  }));
+}
+
 export async function getObject(key) {
   return r2Client().send(new GetObjectCommand({ Bucket: bucketName(), Key: key }));
 }

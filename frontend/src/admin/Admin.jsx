@@ -89,7 +89,7 @@ export default function Admin() {
       available: profile.available,
     };
     try {
-      await apiFetch("/api/admin/profile", {
+      const result = await apiFetch("/api/admin/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -98,7 +98,7 @@ export default function Admin() {
         ...current,
         profile: { ...current.profile, ...payload },
       }));
-      setNotice("Section published successfully.");
+      setNotice(result.deployment?.warning || "Section published successfully. A fresh public build has been requested.");
     } catch (error) {
       setNotice(`Error: ${error.message}`);
     }
@@ -340,7 +340,7 @@ function CustomSectionsEditor({ items, setData, setNotice }) {
       });
       setData((current) => ({ ...current, customSections: result.items }));
       setDrafts(result.items.map(prepare));
-      setNotice("Custom sections published successfully.");
+      setNotice(result.deployment?.warning || "Custom sections published successfully. A fresh public build has been requested.");
     } catch (error) {
       setNotice(`Error: ${error.message}`);
     }
@@ -466,7 +466,7 @@ function CollectionEditor({ section, id, title, items, setData, setNotice }) {
       });
       setData((current) => ({ ...current, [section]: result.items }));
       setDrafts(result.items.map(normalize));
-      setNotice(`${title} published successfully.`);
+      setNotice(result.deployment?.warning || `${title} published successfully. A fresh public build has been requested.`);
     } catch (error) {
       setNotice(`Error: ${error.message}`);
     }
@@ -636,13 +636,14 @@ function ProjectTechnologyPicker({ values, onChange }) {
 }
 
 function normalize(item) {
+  const mediaUrl = value => value && typeof value === "object" ? value.url : value;
   return {
     ...item,
     _key: item.id || crypto.randomUUID(),
     technologies: Array.isArray(item.technologies) ? item.technologies.join(", ") : item.technologies,
     technologyIcons: item.technologyIcons || [],
-    images: item.images || (item.image ? [item.image] : []),
-    logo: item.logo || "",
+    images: (item.images || (item.image ? [item.image] : [])).map(mediaUrl),
+    logo: mediaUrl(item.logo) || "",
   };
 }
 function SectionActions({ label }) {
@@ -656,11 +657,11 @@ function Upload({ title, field, accept, capture, setNotice }) {
   async function send(e) {
     e.preventDefault();
     try {
-      await apiFetch(`/api/admin/upload/${field}`, {
+      const result = await apiFetch(`/api/admin/upload/${field}`, {
         method: "POST",
         body: new FormData(e.currentTarget),
       });
-      setNotice("Upload published.");
+      setNotice(result.deployment?.warning || "Upload published. A fresh public build has been requested.");
     } catch (error) {
       setNotice(`Error: ${error.message}`);
     }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { findProfileCv, updateProfile } from '../services/profile.service.js';
 import { getObject } from '../services/r2.service.js';
+import { triggerFrontendDeployment } from '../services/deployment.service.js';
 
 const optionalHttpUrl = z.union([
   z.literal(''),
@@ -23,7 +24,7 @@ export async function saveProfile(req, res) {
   if (!parsed.success) return res.status(400).json({ error: 'Invalid profile content' });
 
   await updateProfile(parsed.data);
-  return res.json({ ok: true });
+  return res.json({ ok: true, deployment: await triggerFrontendDeployment() });
 }
 
 export async function downloadCv(_req, res) {

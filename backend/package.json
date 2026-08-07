@@ -8,6 +8,7 @@
     "start": "node index.js",
     "seed": "node seed.js",
     "migrate:uploads:r2": "node scripts/migrate-uploads-to-r2.js",
+    "migrate:images:responsive": "node scripts/migrate-responsive-images.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "mongoose": "8.19.1",
     "multer": "2.2.0",
     "sanitize-html": "2.17.6",
+    "sharp": "^0.34.5",
     "zod": "4.4.3"
   },
   "devDependencies": {
